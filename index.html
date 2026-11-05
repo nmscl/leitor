@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-PT"><head><script id="cm-tema">
+<!doctype html><html lang="pt-PT"><head><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%231d5fd1'/%3E%3Cpath d='M7 19V5m0 1c4-3 7 3 11 0v8c-4 3-7-3-11 0' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"><script id="cm-tema">
 /* Tema claro/escuro comum a todas as páginas. "auto" segue o sistema; a escolha fica neste dispositivo. */
 window.CMTema=(()=>{
  const K='cmpTema',ORDEM=['auto','claro','escuro'],mq=matchMedia('(prefers-color-scheme: dark)');
@@ -35,6 +35,12 @@ window.CMTema=(()=>{
  addEventListener('storage',e=>{if(e.key===K)aplicar();});
  return {pref,atual,definir,ciclar,botao,aplicar};
 })();
+/* O administrador acede a todas as provas, tal como na gestão: a password dele vale nos leitores e no quadro. */
+window.cmAdminComPassword=(estado,password)=>!!password&&(estado?.utilizadores||[]).some(c=>(c.tipo==='administrador'||(c.user==='admin'&&!c.tipo))&&c.pass===password);
+/* O número entre parênteses é o ano de escolaridade equivalente: «1(10)» é o 1.º ano de um curso profissional, ou seja, o 10.º ano. */
+window.cmAnoEquivalente=ano=>{const m=String(ano??'').match(/\(\s*(\d{1,2})\s*[^)]*\)/),n=m?Number(m[1]):NaN;return n>=1&&n<=12?n:null;};
+/* O prazo das autorizações vale até ao fim do dia escolhido, na hora deste aparelho. */
+window.cmPrazoConsentimentosTerminado=(prova,agora=new Date())=>{const m=String(prova?.prazoConsentimentos||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return !!m&&agora>=new Date(+m[1],+m[2]-1,+m[3]+1);};
 /* Avisos que ficam visíveis até serem resolvidos ou fechados. */
 window.CMAvisos=(()=>{
  function mostrar(id,texto){
@@ -662,7 +668,7 @@ const CMPartilhaResultados=(()=>{
  body.cmp.visual-reader.visual-v2 main>header .cm-tema-btn~:is(a,button){margin-left:0!important}
 }
 @media print{footer.credit-bar,.cmp-percurso{display:none!important}}
-</style><style>.cm-aviso-fixo,html[data-tema="escuro"] .cm-aviso-fixo{position:fixed;z-index:6500;left:16px;right:16px;bottom:72px;max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 14px;border-radius:12px;background:#a32a21;color:#fff;font-weight:600;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(15,28,46,.3)}.cm-aviso-fixo span{flex:1 1 240px;min-width:0;color:#fff}.cm-aviso-fixo button,html[data-tema="escuro"] .cm-aviso-fixo button{min-height:44px;padding:0 14px;border:1.5px solid #fff;border-radius:10px;background:transparent;color:#fff;font:inherit;cursor:pointer}</style></head><body class="cm-visual visual-v2 visual-dorsais visual-reader cmp"><div id="scan-toast" class="scan-toast" role="status" aria-live="polite" hidden><div id="toast-icon" class="toast-icon">✓</div><div><strong id="toast-title"></strong><span id="toast-detail"></span></div></div><main>
+</style><style>.cm-aviso-fixo,html[data-tema="escuro"] .cm-aviso-fixo{position:fixed;z-index:6500;left:16px;right:16px;bottom:72px;max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 14px;border-radius:12px;background:#a32a21;color:#fff;font-weight:600;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(15,28,46,.3)}.cm-aviso-fixo span{flex:1 1 240px;min-width:0;color:#fff}.cm-aviso-fixo button,html[data-tema="escuro"] .cm-aviso-fixo button{min-height:44px;padding:0 14px;border:1.5px solid #fff;border-radius:10px;background:transparent;color:#fff;font:inherit;cursor:pointer}html,body.cmp.visual-reader{overflow-x:clip}</style></head><body class="cm-visual visual-v2 visual-dorsais visual-reader cmp"><div id="scan-toast" class="scan-toast" role="status" aria-live="polite" hidden><div id="toast-icon" class="toast-icon">✓</div><div><strong id="toast-title"></strong><span id="toast-detail"></span></div></div><main>
 <header>
 
 
@@ -707,12 +713,12 @@ let toastTimer=null,flashTimer=null;
 const acessosLeitor=new Map();let provaPendenteLeitor='';
 function contaProvaLeitor(data,proof){return (data.utilizadores||[]).find(c=>c.user===(proof?.criador||'admin'))||null;}
 function acessoValidoLeitor(id,data=state){const proof=(data.provas||[]).find(p=>p.id===id&&!p.deleted),conta=contaProvaLeitor(data,proof),a=acessosLeitor.get(id);return !!(proof&&conta&&a&&a.user===conta.user&&a.pass===conta.pass&&a.authVersion===Number(conta.authVersion||1));}
-function cancelarPasswordLeitor(){provaPendenteLeitor='';selectedId='';el('proof').value='';el('reader-password-modal').hidden=true;el('reader-password-input').value='';renderRaceCount();renderHistory();feedback('Selecione uma prova','Introduza a password de quem criou a prova para iniciar as leituras.');}
+function cancelarPasswordLeitor(){provaPendenteLeitor='';selectedId='';el('proof').value='';el('reader-password-modal').hidden=true;el('reader-password-input').value='';renderRaceCount();renderHistory();feedback('Selecione uma prova','Introduza a password de quem criou a prova ou de um administrador para iniciar as leituras.');}
 function selecionarProvaLeitor(){const id=el('proof').value;selectedId='';provaPendenteLeitor=id;renderRaceCount();renderHistory();el('scan-toast').hidden=true;feedback('Acesso à prova','Introduza a password para iniciar as leituras.');if(!id){cancelarPasswordLeitor();return;}
- const proof=(state.provas||[]).find(p=>p.id===id),conta=contaProvaLeitor(state,proof);el('reader-password-title').textContent=proof?.nome||'Prova';el('reader-password-description').textContent='Introduza a password de '+(conta?.user||proof?.criador||'admin')+' para aceder ao leitor desta prova.';el('reader-password-error').textContent='';el('reader-password-input').value='';el('reader-password-modal').hidden=false;el('reader-password-input').focus();}
+ const proof=(state.provas||[]).find(p=>p.id===id),conta=contaProvaLeitor(state,proof);el('reader-password-title').textContent=proof?.nome||'Prova';el('reader-password-description').textContent='Introduza a password de '+(conta?.user||proof?.criador||'admin')+' ou de um administrador para aceder ao leitor desta prova.';el('reader-password-error').textContent='';el('reader-password-input').value='';el('reader-password-modal').hidden=false;el('reader-password-input').focus();}
 function validarPasswordLeitor(event){event.preventDefault();const proof=(state.provas||[]).find(p=>p.id===provaPendenteLeitor&&!p.deleted),conta=contaProvaLeitor(state,proof),input=el('reader-password-input');
  if(!proof||!conta||typeof conta.pass!=='string'||!conta.pass){el('reader-password-error').textContent='A conta responsável por esta prova não está disponível. Verifique a gestão de contas.';return;}
- if(input.value!==conta.pass){el('reader-password-error').textContent='Password incorreta. Tente novamente.';input.value='';input.focus();return;}
+ if(input.value!==conta.pass&&!cmAdminComPassword(state,input.value)){el('reader-password-error').textContent='Password incorreta. Tente novamente.';input.value='';input.focus();return;}
  selectedId=proof.id;acessosLeitor.set(proof.id,{user:conta.user,pass:conta.pass,authVersion:Number(conta.authVersion||1)});provaPendenteLeitor='';input.value='';el('reader-password-modal').hidden=true;el('proof').value=selectedId;renderRaceCount();renderHistory();feedback('Prova selecionada',proof.nome);drainQueue();}
 function filasDaProva(){return acessoValidoLeitor(selectedId)?queue.filter(e=>e.proofId===selectedId):[];}
 function provaDoHistorico(h){return h.proofId||queue.find(e=>e.id===h.id)?.proofId||(state.provas||[]).find(p=>(p.leiturasMobileIds||[]).some(e=>e.id===h.id))?.id||'';}
@@ -800,7 +806,7 @@ function applyRead(data,read){
 }
 function receiveQR(text,options={}){
  try{
-  if(!acessoValidoLeitor(selectedId))throw Error('Selecione a prova e introduza a password de quem a criou antes de registar leituras.');
+  if(!acessoValidoLeitor(selectedId))throw Error('Selecione a prova e introduza a password de quem a criou ou de um administrador antes de registar leituras.');
   const read={...parseQR(text),desistencia:options.desistencia===true || (!Object.hasOwn(options,'desistencia') && el('read-mode')?.checked===true)},stamp=Date.now(),proof=(state.provas || []).find(p=>p.id===selectedId),match=validateRead(proof,{...read,stamp});
   if(match.duplicate){feedback(match.existente?.desistencia?'Desistência já registada':'Dorsal '+read.dorsal+' já registado',match.athlete.nome+' · '+(match.existente?.desistencia?'Atleta marcado como desistente.':'Chegada já registada.')+' Nenhuma alteração efetuada.','warning');return;}
   const pending=queue.find(e=>e.proofId===selectedId && Number(e.dorsal)===Number(read.dorsal) && (e.desistencia || !read.desistencia && stamp-e.stamp<6000));
@@ -910,7 +916,7 @@ window.CMVisual=(()=>{
    b.addEventListener('keydown',event=>{if(!['ArrowDown','ArrowUp','ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;event.preventDefault();const active=all('.tab-btn').filter(n=>!n.disabled);let index=active.indexOf(b);index=event.key==='Home'?0:event.key==='End'?active.length-1:(index+(['ArrowDown','ArrowRight'].includes(event.key)?1:-1)+active.length)%active.length;active[index].click();active[index].focus();});
   });
   const links=element('div','visual-sidebar-links');
-  for(const [name,url] of [['Leitor de dorsais','Leitor.html'],['Leitor de consentimentos','Consentimentos.html'],['Todas as aplicações','../../index.html']]){const a=element('a','',name+' ↗');a.href=url;a.target='_blank';a.rel='noopener';links.append(a);}aside.append(links);
+  for(const [name,url] of [['Leitor de dorsais','leitor.html'],['Leitor de consentimentos','consentimentos.html'],['Todas as aplicações','index.html']]){const a=element('a','',name+' ↗');a.href=url;a.target='_blank';a.rel='noopener';links.append(a);}aside.append(links);
   const brand=$('.brand-badge');brand.prepend(mark());rename('.brand-text-title','Corta-Mato');rename('.brand-text-sub','Organização escolar');
   const backups=$('.backup-controls'),items=all(':scope > button',backups),account=items.find(b=>b.id==='btn-menu-utilizadores');
   items.forEach(b=>{if(b.textContent.includes('Backup'))b.textContent='Exportar cópia de segurança';else if(b.textContent.includes('Importar'))b.textContent='Restaurar cópia de segurança';else if(b===account)b.textContent='Contas e utilizadores';else if(b.textContent.includes('Sair'))b.textContent='Terminar sessão';});
@@ -952,7 +958,7 @@ window.CMVisual=(()=>{
  }
  function step(panel,n,text){if(panel&&!$('.visual-reader-step',panel)){const p=element('div','visual-reader-step',text);p.dataset.step=n;panel.prepend(p);}}
  function readers(){
-  const header=$('main>header');if(header){header.prepend(mark());const home=element('a','visual-reader-home','Aplicações ↗');home.href='../../index.html';home.target='_blank';home.rel='noopener';header.append(home);}
+  const header=$('main>header');if(header){header.prepend(mark());const home=element('a','visual-reader-home','Aplicações ↗');home.href='index.html';home.target='_blank';home.rel='noopener';header.append(home);}
   if(document.body.classList.contains('visual-dorsais')){
    const proof=$('#proof')?.closest('.panel'),camera=$('#camera')?.closest('.panel'),manual=$('#manual')?.closest('.panel'),history=$('#history')?.closest('.panel');
    proof?.classList.add('visual-reader-proof');camera?.classList.add('visual-reader-camera');manual?.classList.add('visual-reader-manual');history?.classList.add('visual-reader-history');
