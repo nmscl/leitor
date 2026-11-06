@@ -533,7 +533,8 @@ const CMPartilhaResultados=(()=>{
  html:has(body.cmp){background:#f3f5f8!important}
  body.cmp.visual-reader.visual-v2 :is(button,input,select,textarea,label){font-family:var(--f-body)!important}
  body.cmp.visual-reader.visual-v2 :is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--c-sun)!important;outline-offset:2px}
- body.cmp.visual-reader.visual-v2 main{max-width:620px!important;padding:0 16px 28px!important;margin:0 auto!important}
+ body.cmp.visual-reader.visual-v2 main{display:block!important;max-width:620px!important;padding:0 16px 28px!important;margin:0 auto!important}
+ body.cmp.visual-reader.visual-v2 #reader-app:not([hidden]){display:block!important}
  .cmp-ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
  /* Cabeçalho claro, igual à gestão */
@@ -1132,8 +1133,13 @@ window.CMPercursoLeitor=(()=>{
   const vis=itens.map(it=>visivel(it.painel));
   let atual=-1;const linha=innerHeight*.45;
   itens.forEach((it,i)=>{if(vis[i]&&(atual<0||it.painel.getBoundingClientRect().top<linha))atual=i;});
+  // No topo da página, o passo atual é o primeiro por fazer: um ecrã alto mostra vários passos ao mesmo tempo.
+  if(scrollY<8){const falta=itens.findIndex((it,i)=>vis[i]&&!(it.feito?.()??false));if(falta>=0)atual=falta;}
+  // No fim da página, o último passo visível é o atual, mesmo que o título não chegue a meio do ecrã.
+  else if(scrollY+innerHeight>=document.documentElement.scrollHeight-4){vis.forEach((v,i)=>{if(v)atual=i;});}
   itens.forEach((it,i)=>{
-   const depois=vis.some((v,j)=>v&&j>i),feito=i!==atual&&((vis[i]&&i<atual)||(!vis[i]&&depois)||(it.feito?.()??false));
+   // Um passo com condição só fica feito quando ela se cumpre, e os seguintes não contam como feitos antes disso.
+   const depois=vis.some((v,j)=>v&&j>i),bloqueado=itens.some((o,j)=>j<i&&vis[j]&&o.feito&&!o.feito()),feito=i!==atual&&!bloqueado&&(it.feito?it.feito():((vis[i]&&i<atual)||(!vis[i]&&depois)));
    it.b.disabled=!vis[i];it.li.classList.toggle('is-done',feito);
    if(i===atual)it.b.setAttribute('aria-current','step');else it.b.removeAttribute('aria-current');
    const sig=String(feito);if(it.ponto.dataset.sig!==sig){it.ponto.dataset.sig=sig;it.ponto.replaceChildren(feito?ico('check'):document.createTextNode(String(i+1)));}
@@ -1160,7 +1166,7 @@ window.CMPercursoLeitor=(()=>{
    b.addEventListener('click',()=>painel.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'}));
    li.append(b);ol.append(li);
    const it={li,b,ponto,painel,nome};
-   if(painel.contains($('#proof')))it.feito=()=>!!$('#proof')?.value;
+   if(painel.contains($('#proof')))it.feito=()=>{try{return !!selectedId;}catch(e){return !!$('#proof')?.value;}};
    return it;
   });
   nav.append(ol);header.after(nav);
