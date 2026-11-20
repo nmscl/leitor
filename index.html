@@ -1430,4 +1430,68 @@ body.cmp.visual-reader.visual-v2.leitor-ecra:has(.leitor-ecra-manual:not([hidden
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();
 })();
 </script>
+<script id="cm-termo">
+// ---------- «Aluno» ou «Atleta» ----------
+// A prova escolhe a palavra (Editar prova). Troca-se em todo o texto visível, nos documentos antes de imprimir
+// e nas imagens desenhadas em canvas. Os valores dos campos de formulário e o texto a ser editado não mudam.
+const CMTermo=(()=>{
+ let termo=null,observador=null;
+ const SALTAR=new Set(['SCRIPT','STYLE','TEXTAREA','INPUT','NOSCRIPT','CODE','PRE']);
+ const casar=(orig,novo)=>orig.length>1&&orig===orig.toLocaleUpperCase('pt-PT')?novo.toLocaleUpperCase('pt-PT'):orig[0]!==orig[0].toLocaleLowerCase('pt-PT')?novo[0].toLocaleUpperCase('pt-PT')+novo.slice(1):novo;
+ function trocar(texto){
+  if(!termo||typeof texto!=='string'||!texto)return texto;
+  if(termo==='atleta'){
+   if(!/alun/i.test(texto))return texto;
+   return texto.replace(/\balun[oa]\([oa]\)/gi,m=>casar(m,'atleta')).replace(/\balun([oa])(s?)\b/gi,(m,g,s)=>casar(m,'atleta'+s));
+  }
+  if(!/atleta/i.test(texto))return texto;
+  return texto.replace(/\batleta(s?)\b/gi,(m,s)=>casar(m,'aluno'+s));
+ }
+ const ignorar=el=>SALTAR.has(el.tagName)||el.isContentEditable||!!el.closest?.('[data-cm-termo="nao"]');
+ function trocarNo(no){const v=no.nodeValue,n=trocar(v);if(n!==v)no.nodeValue=n;}
+ function trocarAtributos(el){for(const a of ['placeholder','title','aria-label']){const v=el.getAttribute?.(a);if(v){const n=trocar(v);if(n!==v)el.setAttribute(a,n);}}}
+ function varrer(raiz){
+  if(!termo||!raiz)return;
+  if(raiz.nodeType===3){if(raiz.parentElement&&!ignorar(raiz.parentElement))trocarNo(raiz);return;}
+  if(raiz.nodeType!==1&&raiz.nodeType!==9&&raiz.nodeType!==11)return;
+  if(raiz.nodeType===1&&ignorar(raiz))return;
+  const w=document.createTreeWalker(raiz,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT,{acceptNode:n=>n.nodeType===1?(ignorar(n)?NodeFilter.FILTER_REJECT:(trocarAtributos(n),NodeFilter.FILTER_SKIP)):NodeFilter.FILTER_ACCEPT});
+  if(raiz.nodeType===1)trocarAtributos(raiz);
+  let no;while((no=w.nextNode()))trocarNo(no);
+ }
+ function ligar(){
+  if(observador||typeof MutationObserver!=='function')return;
+  observador=new MutationObserver(registos=>{
+   if(!termo)return;
+   for(const r of registos){
+    if(r.type==='characterData'){if(r.target.parentElement&&!ignorar(r.target.parentElement))trocarNo(r.target);}
+    else if(r.type==='attributes')trocarAtributos(r.target);
+    else r.addedNodes.forEach(varrer);
+   }
+  });
+  observador.observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
+ }
+ // Imagens desenhadas em canvas (publicações, quadros): a palavra muda também aí.
+ if(typeof CanvasRenderingContext2D!=='undefined'){
+  const P=CanvasRenderingContext2D.prototype;
+  for(const m of ['fillText','strokeText','measureText']){const original=P[m];P[m]=function(t,...resto){return original.call(this,trocar(t),...resto);};}
+ }
+ // Antes de imprimir, o documento é revisto de uma vez (a impressão não espera pelo observador).
+ window.addEventListener('beforeprint',()=>{if(termo){varrer(document.body);document.title=trocar(document.title);}});
+ function definir(novo){
+  novo=novo==='atleta'||novo==='aluno'?novo:null;
+  if(novo===termo)return;
+  termo=novo;document.documentElement.dataset.termo=novo||'';
+  if(!termo)return;
+  ligar();
+  if(document.body)varrer(document.body);
+  document.title=trocar(document.title);
+ }
+ return {definir,trocar,varrer,get termo(){return termo;}};
+})();
+window.CMTermo=CMTermo;
+
+// A palavra segue a prova que esta página está a usar.
+setInterval(()=>{CMTermo.definir((()=>{try{return (state?.provas||[]).find(p=>p&&p.id===selectedId)?.termo||null;}catch(e){return null;}})());},800);
+</script>
 </body></html>
