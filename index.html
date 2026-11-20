@@ -150,7 +150,7 @@ const CMPartilhaResultados=(()=>{
  function projetar(prova){
   const alunos=prova.participantes || [],voluntarios=alunos.filter(a=>a.voluntario),porDorsal=new Map(alunos.map((a,i)=>[String(a.dorsal),{a,i}]));
   const out=campos(prova,['id','nome','nomeEscola','tituloDorsal','anoLetivo','dataProva']);
-  out.escaloesConfig=Object.fromEntries(Object.entries(prova.escaloesConfig || {}).map(([id,cfg])=>[id,campos(cfg,['nome','ativo','voltas','distanciaMetros','horaArranqueMs','horaFimMs','reinicioMs','anoMin','anoMax'])]));
+  out.escaloesConfig=Object.fromEntries(Object.entries(prova.escaloesConfig || {}).map(([id,cfg])=>[id,campos(cfg,['nome','ativo','voltas','distanciaMetros','horaArranqueMs','horaFimMs','reinicioMs','revisaoPista','anoMin','anoMax'])]));
   // Process numbers become local join keys. Unclassified pupils contribute only
   // category/count data; the public document contains no account or consent data.
   out.participantes=alunos.flatMap((a,i)=>a.voluntario?[]:[{...campos(a,['dorsal','ano','turma','escalaoId','genero','ativo','alf','nee','limitacoesFuncionais']),processo:'p'+i}]);
@@ -669,13 +669,17 @@ const CMPartilhaResultados=(()=>{
  body.cmp.visual-reader.visual-v2 main>header .cm-tema-btn~:is(a,button){margin-left:0!important}
 }
 @media print{footer.credit-bar,.cmp-percurso{display:none!important}}
-</style><style>.cm-aviso-fixo,html[data-tema="escuro"] .cm-aviso-fixo{position:fixed;z-index:6500;left:16px;right:16px;bottom:72px;max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 14px;border-radius:12px;background:#a32a21;color:#fff;font-weight:600;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(15,28,46,.3)}.cm-aviso-fixo span{flex:1 1 240px;min-width:0;color:#fff}.cm-aviso-fixo button,html[data-tema="escuro"] .cm-aviso-fixo button{min-height:44px;padding:0 14px;border:1.5px solid #fff;border-radius:10px;background:transparent;color:#fff;font:inherit;cursor:pointer}html,body.cmp.visual-reader{overflow-x:clip}</style></head><body class="cm-visual visual-v2 visual-dorsais visual-reader cmp"><div id="scan-toast" class="scan-toast" role="status" aria-live="polite" hidden><div id="toast-icon" class="toast-icon">✓</div><div><strong id="toast-title"></strong><span id="toast-detail"></span></div></div><main>
+</style><style>.cm-aviso-fixo,html[data-tema="escuro"] .cm-aviso-fixo{position:fixed;z-index:6500;left:16px;right:16px;bottom:72px;max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 14px;border-radius:12px;background:#a32a21;color:#fff;font-weight:600;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(15,28,46,.3)}.cm-aviso-fixo span{flex:1 1 240px;min-width:0;color:#fff}.cm-aviso-fixo button,html[data-tema="escuro"] .cm-aviso-fixo button{min-height:44px;padding:0 14px;border:1.5px solid #fff;border-radius:10px;background:transparent;color:#fff;font:inherit;cursor:pointer}html,body.cmp.visual-reader{overflow-x:clip}</style><style>.modos-dorsal{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:7px}.modos-dorsal legend{font-weight:700;margin-bottom:7px}.modos-dorsal label{display:inline-flex!important;align-items:center;gap:6px;min-height:42px;border:1px solid currentColor;border-radius:8px;padding:5px 9px;cursor:pointer}.modos-dorsal input[type=radio]{width:18px!important;height:18px!important;min-height:0!important;margin:0;accent-color:#177653}.modos-dorsal label:has(input:checked){font-weight:750;outline:2px solid currentColor}</style></head><body class="cm-visual visual-v2 visual-dorsais visual-reader cmp"><div id="scan-toast" class="scan-toast" role="status" aria-live="polite" hidden><div id="toast-icon" class="toast-icon">✓</div><div><strong id="toast-title"></strong><span id="toast-detail"></span></div></div><main>
 <header>
 
 
 <div class="logo">▣</div><div><h1>Leitor de Dorsais</h1><p>Corta-Mato · Voltas e chegadas</p></div></header>
 <section class="panel"><label for="proof">Prova a registar</label><select id="proof"><option value="">A ligar à aplicação…</option></select><div class="status"><span id="connection" role="status">A ligar…</span><span id="race-count">—</span></div><div id="sync-status" class="sync-badge" role="status" aria-live="polite">A aguardar sincronização</div></section>
-<section class="panel"><label class="reader-withdraw-toggle" for="read-mode"><input type="checkbox" id="read-mode" onchange="mudarModoLeituraDorsais()" disabled><span>Marcar próximo atleta como <strong>Desistência</strong></span></label><p class="hint">Por defeito, a leitura é normal. O visto aplica-se apenas à próxima picagem e é retirado automaticamente depois do registo.</p><div id="camera"><div class="camera-idle">Aponte a câmara para o QR code do dorsal.</div></div><div class="actions"><button class="primary" id="start" type="button">Iniciar câmara</button><button id="stop" type="button" disabled>Parar</button></div><label class="photo-button">Ler QR de uma fotografia<input id="photo" type="file" accept="image/*" capture="environment"></label><p class="hint">Cada leitura conta uma volta. Na última volta, a chegada é registada com o tempo desde a partida do escalão.</p></section>
+<section class="panel"><fieldset id="read-mode" class="modos-dorsal"><legend>Próxima leitura</legend>
+<label><input type="radio" name="modo-dorsal" value="normal" checked onchange="mudarModoLeituraDorsais()"> Ler dorsal</label>
+<label><input type="radio" name="modo-dorsal" value="desistencia" onchange="mudarModoLeituraDorsais()"> Ler desistência</label>
+<label><input type="radio" name="modo-dorsal" value="desclassificacao" onchange="mudarModoLeituraDorsais()"> Ler desclassificação</label>
+</fieldset><p class="hint">Depois de registar uma desistência ou desclassificação, o leitor volta a «Ler dorsal».</p><div id="camera"><div class="camera-idle">Aponte a câmara para o QR code do dorsal.</div></div><div class="actions"><button class="primary" id="start" type="button">Iniciar câmara</button><button id="stop" type="button" disabled>Parar</button></div><label class="photo-button">Ler QR de uma fotografia<input id="photo" type="file" accept="image/*" capture="environment"></label><p class="hint">Cada leitura conta uma volta. Na última volta, a chegada é registada com o tempo desde a partida do escalão.</p></section>
 <section id="feedback" class="panel feedback" role="status" aria-live="polite"><p id="feedback-title">Pronto para ler</p><p id="feedback-detail">Selecione a prova e inicie a câmara.</p></section>
 <section class="panel"><label for="bib">Introduzir dorsal, se o QR não for legível</label><form id="manual" class="manual"><input id="bib" inputmode="numeric" autocomplete="off" placeholder="N.º do dorsal" aria-label="Número do dorsal"><button type="submit">Registar</button></form></section>
 <section class="panel"><h2>Leituras neste telemóvel</h2><p id="pending" class="queue-summary">Sem leituras por enviar.</p><button id="retry" type="button" hidden style="width:100%;margin-bottom:12px">Voltar a enviar</button><ul id="history" class="history"><li>Ainda não foram lidos dorsais.</li></ul></section>
@@ -711,16 +715,62 @@ const el=id=>document.getElementById(id), escapeHtml=v=>String(v??'').replace(/[
 function stored(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}}
 let state=normalizarNomesProvasAdaptadas(stored(CACHE,{provas:[]})), queue=stored(QUEUE,[]), history=stored(HISTORY,[]), selectedId='',db=null,docRef=null,scanner=null,cameraBusy=false,sending=false,connected=false,latestReads=new Map(),visibleQR=null,lastQRSeen=0;
 let toastTimer=null,flashTimer=null;
+// O acesso pertence ao separador e à prova. A credencial persiste durante recargas e suspensão.
+function sessaoDaProva(servico){
+ const chave='cm.sessao.'+servico;
+ let geracao=0,emCurso=false;
+ const administrador=c=>c&&(c.tipo==='administrador'||c.user==='admin'&&!c.tipo);
+ function credencial(data,p,conta){
+  const dono=(data.utilizadores||[]).find(c=>c.user===(p?.criador||'admin'));
+  if(!p||p.deleted||!dono?.pass||!conta?.pass||conta.user!==dono.user&&!administrador(conta))return null;
+  return {id:p.id,provaId:p.id,user:dono.user,pass:dono.pass,authVersion:Number(dono.authVersion||1),
+   operador:conta.user,segredo:conta.pass,versao:Number(conta.authVersion||1)};
+ }
+ function valida(data,p,a){
+  const atual=a&&credencial(data,p,(data.utilizadores||[]).find(c=>c.user===a.operador));
+  return !!atual&&Object.keys(atual).every(k=>atual[k]===a[k]);
+ }
+ async function assinatura(a,sal){
+  const bytes=new TextEncoder().encode(JSON.stringify([chave,sal,a.id,a.user,a.authVersion,a.pass,a.operador,a.versao,a.segredo]));
+  const hash=await crypto.subtle.digest('SHA-256',bytes);
+  return Array.from(new Uint8Array(hash),v=>v.toString(16).padStart(2,'0')).join('');
+ }
+ function sair(){geracao++;try{sessionStorage.removeItem(chave);}catch{}}
+ function iniciar(data,p,password){
+  const contas=data.utilizadores||[],dono=contas.find(c=>c.user===(p.criador||'admin'));
+  const a=credencial(data,p,dono?.pass===password?dono:contas.find(c=>administrador(c)&&c.pass===password));
+  if(!a)return null;
+  sair();const versao=geracao;
+  if(globalThis.crypto?.subtle){const sal=Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-');
+   assinatura(a,sal).then(hash=>{if(geracao===versao)sessionStorage.setItem(chave,JSON.stringify({id:p.id,operador:a.operador,sal,hash}));}).catch(()=>{});}
+  return a;
+ }
+ async function retomar(estado,aceitar){
+  if(emCurso)return;
+  try{
+   const guardado=JSON.parse(sessionStorage.getItem(chave)||'null');if(!guardado)return;
+   const data=estado(),p=data.provas?.find(p=>p.id===guardado.id);
+   if(!p||!data.utilizadores?.length)return;
+   const a=credencial(data,p,data.utilizadores.find(c=>c.user===guardado.operador)),versao=geracao;
+   emCurso=true;const hash=a&&await assinatura(a,guardado.sal);
+   if(geracao!==versao)return;
+   if(!a||guardado.hash!==hash){sair();return;}
+   const ultimo=estado();if(valida(ultimo,ultimo.provas?.find(p=>p.id===a.id),a))aceitar(a);
+  }catch{}finally{emCurso=false;}
+ }
+ return {iniciar,valida,retomar,sair};
+}
+const sessaoDorsais=sessaoDaProva('dorsais');
 const acessosLeitor=new Map();let provaPendenteLeitor='';
 function contaProvaLeitor(data,proof){return (data.utilizadores||[]).find(c=>c.user===(proof?.criador||'admin'))||null;}
-function acessoValidoLeitor(id,data=state){const proof=(data.provas||[]).find(p=>p.id===id&&!p.deleted),conta=contaProvaLeitor(data,proof),a=acessosLeitor.get(id);return !!(proof&&conta&&a&&a.user===conta.user&&a.pass===conta.pass&&a.authVersion===Number(conta.authVersion||1));}
-function cancelarPasswordLeitor(){provaPendenteLeitor='';selectedId='';el('proof').value='';el('reader-password-modal').hidden=true;el('reader-password-input').value='';renderRaceCount();renderHistory();feedback('Selecione uma prova','Introduza a password de quem criou a prova ou de um administrador para iniciar as leituras.');}
-function selecionarProvaLeitor(){const id=el('proof').value;selectedId='';provaPendenteLeitor=id;renderRaceCount();renderHistory();el('scan-toast').hidden=true;feedback('Acesso à prova','Introduza a password para iniciar as leituras.');if(!id){cancelarPasswordLeitor();return;}
+function acessoValidoLeitor(id,data=state){return sessaoDorsais.valida(data,(data.provas||[]).find(p=>p.id===id),acessosLeitor.get(id));}
+function cancelarPasswordLeitor(){sessaoDorsais.sair();provaPendenteLeitor='';selectedId='';el('proof').value='';el('reader-password-modal').hidden=true;el('reader-password-input').value='';renderRaceCount();renderHistory();feedback('Selecione uma prova','Introduza a password de quem criou a prova ou de um administrador para iniciar as leituras.');}
+function selecionarProvaLeitor(){sessaoDorsais.sair();const id=el('proof').value;selectedId='';provaPendenteLeitor=id;renderRaceCount();renderHistory();el('scan-toast').hidden=true;feedback('Acesso à prova','Introduza a password para iniciar as leituras.');if(!id){cancelarPasswordLeitor();return;}
  const proof=(state.provas||[]).find(p=>p.id===id),conta=contaProvaLeitor(state,proof);el('reader-password-title').textContent=proof?.nome||'Prova';el('reader-password-description').textContent='Introduza a password de '+(conta?.user||proof?.criador||'admin')+' ou de um administrador para aceder ao leitor desta prova.';el('reader-password-error').textContent='';el('reader-password-input').value='';el('reader-password-modal').hidden=false;el('reader-password-input').focus();}
 function validarPasswordLeitor(event){event.preventDefault();const proof=(state.provas||[]).find(p=>p.id===provaPendenteLeitor&&!p.deleted),conta=contaProvaLeitor(state,proof),input=el('reader-password-input');
  if(!proof||!conta||typeof conta.pass!=='string'||!conta.pass){el('reader-password-error').textContent='A conta responsável por esta prova não está disponível. Verifique a gestão de contas.';return;}
  if(input.value!==conta.pass&&!cmAdminComPassword(state,input.value)){el('reader-password-error').textContent='Password incorreta. Tente novamente.';input.value='';input.focus();return;}
- selectedId=proof.id;acessosLeitor.set(proof.id,{user:conta.user,pass:conta.pass,authVersion:Number(conta.authVersion||1)});provaPendenteLeitor='';input.value='';el('reader-password-modal').hidden=true;el('proof').value=selectedId;renderRaceCount();renderHistory();feedback('Prova selecionada',proof.nome);drainQueue();}
+ selectedId=proof.id;acessosLeitor.set(proof.id,sessaoDorsais.iniciar(state,proof,input.value));provaPendenteLeitor='';input.value='';el('reader-password-modal').hidden=true;el('proof').value=selectedId;renderRaceCount();renderHistory();feedback('Prova selecionada',proof.nome);drainQueue();}
 function filasDaProva(){return acessoValidoLeitor(selectedId)?queue.filter(e=>e.proofId===selectedId):[];}
 function provaDoHistorico(h){return h.proofId||queue.find(e=>e.id===h.id)?.proofId||(state.provas||[]).find(p=>(p.leiturasMobileIds||[]).some(e=>e.id===h.id))?.id||'';}
 function save(key,value){localStorage.setItem(key,JSON.stringify(value));}
@@ -732,6 +782,9 @@ function renderSyncStatus(){const badge=el('sync-status'),count=filasDaProva().l
 function setConnection(text,online){connected=online;el('connection').textContent=text;el('connection').className=online?'connected':'';renderSyncStatus();}
 function renderProofs(){
  const proofs=(state.provas||[]).filter(p=>p&&p.id&&!p.deleted);
+ if(!selectedId&&!provaPendenteLeitor)sessaoDorsais.retomar(()=>state,a=>{
+  if(selectedId||provaPendenteLeitor)return;selectedId=a.id;acessosLeitor.set(a.id,a);renderProofs();drainQueue();
+ });
  for(const id of acessosLeitor.keys())if(!acessoValidoLeitor(id))acessosLeitor.delete(id);
  if(selectedId&&!acessoValidoLeitor(selectedId)){selectedId='';el('scan-toast').hidden=true;feedback('Acesso à prova expirado','Selecione a prova e introduza novamente a password.');}
  if(provaPendenteLeitor&&!proofs.some(p=>p.id===provaPendenteLeitor))cancelarPasswordLeitor();
@@ -739,21 +792,21 @@ function renderProofs(){
  el('proof').value=provaPendenteLeitor||selectedId;el('proof').disabled=!proofs.length;
  renderRaceCount();renderHistory();
 }
-function renderRaceCount(){if(!acessoValidoLeitor(selectedId)){el('race-count').textContent='—';return;}const p=(state.provas||[]).find(p=>p.id===selectedId);const count=Object.values(p?.escaloesConfig||{}).filter(c=>c.ativo&&c.horaArranqueMs&&!c.horaFimMs).length;el('race-count').textContent=count+' escalão'+(count===1?'':'es')+' em pista';}
+function renderRaceCount(){if(!acessoValidoLeitor(selectedId)){el('race-count').textContent='—';return;}const p=(state.provas||[]).find(p=>p.id===selectedId);const count=Object.values(p?.escaloesConfig||{}).filter(c=>c.ativo&&c.horaArranqueMs&&!c.horaFimMs).length;el('race-count').textContent=count+(count===1?' escalão':' escalões')+' em pista';}
 let provaModoLeituraDorsais='';
 function atualizarModoLeituraDorsais(){
  const campo=el('read-mode'),valido=acessoValidoLeitor(selectedId);if(!campo)return;
- if(!valido || provaModoLeituraDorsais!==selectedId){campo.checked=false;provaModoLeituraDorsais=valido?selectedId:'';}campo.disabled=!valido;
+ if(!valido || provaModoLeituraDorsais!==selectedId){campo.querySelector('[value=normal]').checked=true;provaModoLeituraDorsais=valido?selectedId:'';}campo.disabled=!valido;
 }
 function mudarModoLeituraDorsais(){
  visibleQR=null;lastQRSeen=0;
- feedback(el('read-mode').checked?'Próxima leitura: desistência':'Próxima leitura: volta / chegada',el('read-mode').checked?'Leia o dorsal e confirme o aluno a marcar como desistente.':'Leia o dorsal para registar a volta ou a chegada.');
+ const opcao=document.querySelector('[name=modo-dorsal]:checked');feedback(opcao.parentElement.textContent.trim(),opcao.value==='normal'?'Leia o dorsal para registar a volta ou a chegada.':'Leia o dorsal e confirme o atleta.');
 }
 function dorsalHistoricoLeitor(h){return h.dorsal || queue.find(e=>e.id===h.id)?.dorsal || h.title?.match(/Dorsal\s+(\d+)/i)?.[1] || '';}
 function podeMarcarDesistenciaLeitura(h){
- if(h.desistencia || /^Leitura recusada/.test(h.title || '') || /Desistência/i.test(h.title || ''))return false;
+ if(h.desistencia || h.desclassificado || /^Leitura recusada/.test(h.title || '') || /Desistência/i.test(h.title || ''))return false;
  const dorsal=dorsalHistoricoLeitor(h),proof=(state.provas || []).find(p=>p.id===selectedId),aluno=dorsal?participantFor(proof || {},{dorsal:String(dorsal)}):null;
- return !!aluno && !aluno.voluntario && aluno.ativo!==false && !(proof.resultados || []).some(r=>resultadoDoAtletaLeitor(r,aluno) && r.desistencia) && !queue.some(e=>e.proofId===selectedId && Number(e.dorsal)===Number(dorsal) && e.desistencia);
+ return !!aluno && !aluno.voluntario && aluno.ativo!==false && !(proof.resultados || []).some(r=>resultadoDoAtletaLeitor(r,aluno) && (r.desistencia||r.desqualificado)) && !queue.some(e=>e.proofId===selectedId && Number(e.dorsal)===Number(dorsal) && e.desistencia);
 }
 function marcarDesistenciaLeitura(id){
  const h=history.find(item=>item.id===id);if(!h || !acessoValidoLeitor(selectedId) || provaDoHistorico(h)!==selectedId)return;
@@ -765,14 +818,14 @@ function renderHistory(){
  el('history').innerHTML=rows.length?rows.slice(0,25).map(h=>`<li><strong>${escapeHtml(h.title)}</strong><small>${escapeHtml(h.detail)} · ${new Date(h.stamp).toLocaleTimeString('pt-PT')}</small>${podeMarcarDesistenciaLeitura(h)?`<button type="button" class="history-withdraw" data-read-id="${escapeHtml(h.id)}" onclick="marcarDesistenciaLeitura(this.dataset.readId)">Marcar desistência</button>`:''}</li>`).join(''):acessoValidoLeitor(selectedId)?'<li>Ainda não foram lidos dorsais nesta prova.</li>':'<li>Selecione uma prova e valide a password para ver as leituras.';
 }
 function record(event,title,detail){
- const row={id:event.id,proofId:event.proofId,title,detail,stamp:event.stamp,dorsal:event.dorsal || '',processo:event.processo || '',desistencia:event.desistencia===true};const index=history.findIndex(h=>h.id===event.id);if(index>=0)history[index]=row;else history.unshift(row);history=history.slice(0,100);try{save(HISTORY,history);}catch{}renderHistory();
+ const row={id:event.id,proofId:event.proofId,title,detail,stamp:event.stamp,dorsal:event.dorsal || '',processo:event.processo || '',desistencia:event.desistencia===true,desclassificado:event.desclassificado===true};const index=history.findIndex(h=>h.id===event.id);if(index>=0)history[index]=row;else history.unshift(row);history=history.slice(0,100);try{save(HISTORY,history);}catch{}renderHistory();
 }
 function parseQR(text){const parts=String(text).trim().split(' - ');const dorsal=parts[0]?.trim();if(!/^\d+$/.test(dorsal||''))throw Error('Este QR não contém um dorsal válido.');return {dorsal,processo:parts[1]?.trim()||'',nome:parts.slice(2).join(' - ').trim()};}
 function participantFor(proof,read){return (proof.participantes||[]).find(a=>String(a.dorsal).trim()===read.dorsal)||((proof.participantes||[]).find(a=>Number(a.dorsal)===Number(read.dorsal)));}
 function resultadoDoAtletaLeitor(resultado,aluno){return String(resultado.dorsal)===String(aluno.dorsal) && (resultado.processo==null || aluno.processo==null || String(resultado.processo)===String(aluno.processo));}
 function fecharGrupoAposLeituraLeitor(proof,athlete,cfg,stamp){
  const group=cfg.grupoArranqueId?Object.keys(proof.escaloesConfig).filter(k=>proof.escaloesConfig[k].grupoArranqueId===cfg.grupoArranqueId):[athlete.escalaoId],groupAthletes=(proof.participantes || []).filter(a=>a.ativo!==false && !a.voluntario && group.includes(a.escalaoId));
- if(groupAthletes.length && groupAthletes.every(a=>(proof.resultados || []).some(r=>resultadoDoAtletaLeitor(r,a) && r.escalaoId===a.escalaoId))){const end=Math.max(stamp,...proof.resultados.filter(r=>group.includes(r.escalaoId)).map(r=>Number(r.chegadaMs)||0));group.forEach(k=>{if(proof.escaloesConfig[k].horaArranqueMs)proof.escaloesConfig[k].horaFimMs=end;});}
+ if(groupAthletes.length && groupAthletes.every(a=>(proof.resultados || []).some(r=>resultadoDoAtletaLeitor(r,a) && r.escalaoId===a.escalaoId))){const end=Math.max(stamp,...proof.resultados.filter(r=>group.includes(r.escalaoId)).map(r=>Number(r.chegadaMs)||0));group.forEach(k=>{const c=proof.escaloesConfig[k];if(c.horaArranqueMs&&!c.horaFimMs){c.horaFimMs=Math.max(end,c.horaArranqueMs);c.revisaoPista=(Number(c.revisaoPista)||0)+1;}});}
 }
 function validateRead(proof,read){
  if(!proof || proof.deleted)throw Error('Selecione uma prova com atletas inscritos.');const athlete=participantFor(proof,read);if(!athlete)throw Error('Dorsal '+read.dorsal+' não encontrado nesta prova.');
@@ -781,7 +834,8 @@ function validateRead(proof,read){
  if(athlete.ativo===false)throw Error('Este atleta está inativo.');const cfg=proof.escaloesConfig?.[athlete.escalaoId];if(!cfg?.ativo)throw Error('O escalão deste atleta não está ativo.');
  if(read.reinicioMs!=null && Number(read.reinicioMs)!==Number(cfg.reinicioMs || 0))throw Error('Este escalão foi reiniciado depois da leitura. Leia novamente o dorsal.');
  const existente=(proof.resultados || []).find(r=>resultadoDoAtletaLeitor(r,athlete));
- if(read.desistencia){if(cfg.horaArranqueMs && read.stamp<cfg.horaArranqueMs)throw Error('A hora do telemóvel é anterior à partida. Acerte a hora e repita a leitura.');return {athlete,cfg,duplicate:existente?.desistencia===true,existente};}
+ if(read.desclassificado&&existente?.desistencia || read.desistencia&&existente?.desqualificado)throw Error('Reverta primeiro a ocorrência anterior na gestão.');
+ if(read.desclassificado||read.desistencia){if(cfg.horaArranqueMs && read.stamp<cfg.horaArranqueMs)throw Error('A hora do telemóvel é anterior à partida. Acerte a hora e repita a leitura.');return {athlete,cfg,duplicate:read.desclassificado?existente?.desqualificado===true:existente?.desistencia===true,existente};}
  if(existente)return {athlete,cfg,duplicate:true,existente};
  if(!cfg.horaArranqueMs)throw Error('O escalão '+cfg.nome+' ainda não começou.');
  if(cfg.horaFimMs && read.stamp>cfg.horaFimMs)throw Error('O escalão '+cfg.nome+' já terminou.');
@@ -790,11 +844,19 @@ function validateRead(proof,read){
 function applyRead(data,read){
  const proof=(data.provas || []).find(p=>p.id===read.proofId),previous=proof?.leiturasMobileIds?.find(e=>e.id===read.id);if(previous)return {title:previous.title,detail:previous.detail,changed:false};
  const {athlete,cfg,duplicate,existente}=validateRead(proof,read);
+ if(duplicate&&existente?.desqualificado)return {title:'Desclassificação já registada',detail:athlete.nome,changed:false,type:'warning'};
  if(duplicate)return {title:(existente?.desistencia?'Desistência já registada':'Dorsal '+athlete.dorsal+' já registado'),detail:athlete.nome+' · '+(existente?.desistencia?'Atleta marcado como desistente.':'Chegada já registada.')+' Nenhuma alteração efetuada.',changed:false,type:'warning'};
  let title,detail;
- if(read.desistencia){
+ if(read.desclassificado){
+  proof.resultados=proof.resultados||[];
+  const r=existente||{dorsal:athlete.dorsal,processo:athlete.processo||'',nome:athlete.nome,ano:athlete.ano||'',turma:athlete.turma||'',genero:athlete.genero||'',alf:athlete.alf===true||athlete.limitacoesFuncionais===true,escalaoId:athlete.escalaoId,escalaoNome:cfg.nome,chegadaMs:read.stamp,tempoProvaMs:null,semChegadaAntesDSC:true};
+  r.desqualificado=true;r.fita={estado:'desclassificado',origem:'leitor',revisao:(Number(r.fita?.revisao)||0)+1,operacao:read.id};
+  if(!existente)proof.resultados.push(r);
+  fecharGrupoAposLeituraLeitor(proof,athlete,cfg,read.stamp);
+  title='Desclassificação registada · Dorsal '+athlete.dorsal;detail=athlete.nome+' · '+cfg.nome+' · DSC';
+ }else if(read.desistencia){
   proof.resultados=(proof.resultados || []).filter(r=>!resultadoDoAtletaLeitor(r,athlete));
-  proof.resultados.push({dorsal:athlete.dorsal,processo:athlete.processo || '',nome:athlete.nome,ano:athlete.ano || '',turma:athlete.turma || '',alf:athlete.alf===true || athlete.limitacoesFuncionais===true,genero:athlete.genero || '',escalaoId:athlete.escalaoId,escalaoNome:cfg.nome,chegadaMs:read.stamp,tempoProvaMs:99999999,desistencia:true});
+  proof.resultados.push({dorsal:athlete.dorsal,processo:athlete.processo || '',nome:athlete.nome,ano:athlete.ano || '',turma:athlete.turma || '',alf:athlete.alf===true || athlete.limitacoesFuncionais===true,genero:athlete.genero || '',escalaoId:athlete.escalaoId,escalaoNome:cfg.nome,chegadaMs:read.stamp,tempoProvaMs:99999999,desistencia:true,resultadoAntesDesistencia:existente||null});
   fecharGrupoAposLeituraLeitor(proof,athlete,cfg,read.stamp);title='Desistência registada · Dorsal '+athlete.dorsal;detail=athlete.nome+' · '+cfg.nome+' · Desistiu';
  }else{
   const scans=athlete.scans || [];if(scans.length && read.stamp-scans[scans.length-1]<6000)return {title:'Dorsal '+athlete.dorsal+' já lido nesta volta',detail:'Leitura repetida ignorada. Nenhuma alteração efetuada.',changed:false,type:'warning'};
@@ -808,16 +870,18 @@ function applyRead(data,read){
 function receiveQR(text,options={}){
  try{
   if(!acessoValidoLeitor(selectedId))throw Error('Selecione a prova e introduza a password de quem a criou ou de um administrador antes de registar leituras.');
-  const read={...parseQR(text),desistencia:options.desistencia===true || (!Object.hasOwn(options,'desistencia') && el('read-mode')?.checked===true)},stamp=Date.now(),proof=(state.provas || []).find(p=>p.id===selectedId),match=validateRead(proof,{...read,stamp});
-  if(match.duplicate){feedback(match.existente?.desistencia?'Desistência já registada':'Dorsal '+read.dorsal+' já registado',match.athlete.nome+' · '+(match.existente?.desistencia?'Atleta marcado como desistente.':'Chegada já registada.')+' Nenhuma alteração efetuada.','warning');return;}
-  const pending=queue.find(e=>e.proofId===selectedId && Number(e.dorsal)===Number(read.dorsal) && (e.desistencia || !read.desistencia && stamp-e.stamp<6000));
-  if(pending){feedback(pending.desistencia?'Desistência pendente · Dorsal '+read.dorsal:'Dorsal '+read.dorsal+' já lido nesta volta','Esta leitura já está pendente de envio. Não foi criada uma nova leitura.','warning');return;}
-  const lastScan=(match.athlete.scans || []).at(-1)||0,key=selectedId+':'+read.dorsal+':'+(read.desistencia?'desistencia':'volta');
-  if(!read.desistencia && (stamp-lastScan<6000 || stamp-(latestReads.get(key)||0)<2000)){feedback('Dorsal '+read.dorsal+' já lido nesta volta','Leitura repetida ignorada. Nenhuma alteração efetuada.','warning');return;}
+  const modo=options.desistencia?'desistencia':document.querySelector('[name=modo-dorsal]:checked').value;
+  const read={...parseQR(text),desistencia:modo==='desistencia',desclassificado:modo==='desclassificacao'},stamp=Date.now(),proof=(state.provas || []).find(p=>p.id===selectedId),match=validateRead(proof,{...read,stamp});
+  if(match.duplicate){feedback(match.existente?.desqualificado?'Desclassificação já registada':match.existente?.desistencia?'Desistência já registada':'Dorsal '+read.dorsal+' já registado',match.athlete.nome+' · '+(match.existente?.desqualificado?'Atleta desclassificado.':match.existente?.desistencia?'Atleta marcado como desistente.':'Chegada já registada.')+' Nenhuma alteração efetuada.','warning');return;}
+  const pending=queue.find(e=>e.proofId===selectedId && Number(e.dorsal)===Number(read.dorsal) && (e.desistencia || e.desclassificado || !read.desclassificado && !read.desistencia && stamp-e.stamp<6000));
+  if(pending){feedback(pending.desclassificado?'Desclassificação pendente · Dorsal '+read.dorsal:pending.desistencia?'Desistência pendente · Dorsal '+read.dorsal:'Dorsal '+read.dorsal+' já lido nesta volta','Esta leitura já está pendente de envio. Não foi criada uma nova leitura.','warning');return;}
+  const lastScan=(match.athlete.scans || []).at(-1)||0,key=selectedId+':'+read.dorsal+':'+modo;
+  if(!read.desclassificado && !read.desistencia && (stamp-lastScan<6000 || stamp-(latestReads.get(key)||0)<2000)){feedback('Dorsal '+read.dorsal+' já lido nesta volta','Leitura repetida ignorada. Nenhuma alteração efetuada.','warning');return;}
+  if(read.desclassificado&&!confirm('Desclassificar '+match.athlete.nome+' (dorsal '+match.athlete.dorsal+')?'))return;
   if(read.desistencia && !confirm('Marcar o dorsal '+match.athlete.dorsal+' — '+match.athlete.nome+' como desistente?'+(match.existente?' A chegada registada será substituída por desistência.':'')))return;
   const event={...read,stamp,reinicioMs:Number(match.cfg.reinicioMs)||0,proofId:selectedId,id:crypto.randomUUID?crypto.randomUUID():stamp+'-'+Math.random().toString(36).slice(2)},next=[...queue,event];save(QUEUE,next);queue=next;latestReads.set(key,stamp);
-  if(read.desistencia)el('read-mode').checked=false;
-  record(event,(read.desistencia?'Desistência pendente':'Leitura pendente')+' · Dorsal '+read.dorsal,match.athlete.nome);feedback('Dorsal '+read.dorsal+(read.desistencia?' · desistência recebida':' lido'),match.athlete.nome+' · A aguardar confirmação do envio','pending');navigator.vibrate?.(80);drainQueue();
+  if(read.desistencia||read.desclassificado)el('read-mode').querySelector('[value=normal]').checked=true;
+  record(event,(read.desclassificado?'Desclassificação pendente':read.desistencia?'Desistência pendente':'Leitura pendente')+' · Dorsal '+read.dorsal,match.athlete.nome);feedback('Dorsal '+read.dorsal+(read.desclassificado?' · desclassificação recebida':read.desistencia?' · desistência recebida':' lido'),match.athlete.nome+' · A aguardar confirmação do envio','pending');navigator.vibrate?.(80);drainQueue();
  }catch(error){feedback('Leitura não registada',error.message,'error');}
 }
 
@@ -1196,4 +1260,174 @@ window.CMPercursoLeitor=(()=>{
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();
  return {iniciar,atualizar:agendar};
 })();
-</script></body></html>
+</script><style id="cm-leitor-ecra">
+/* Telemóveis de 390-460 px: a faixa de créditos passa a duas linhas em vez de cortar o texto. */
+@media(max-width:460px){body.cmp.visual-reader.visual-v2{--h-credit:44px}body.cmp.visual-reader.visual-v2 footer.credit-bar{white-space:normal;line-height:16px!important;font-size:11.5px!important;padding:5px 10px!important}body.cmp.visual-reader.visual-v2 footer.credit-bar .credit-sep{margin:0 4px}}
+
+/* TELEMÓVEL · com a câmara ligada e a prova aberta, o leitor de dorsais ocupa o ecrã inteiro. */
+.leitor-ecra-topo,.leitor-ecra-manual{display:none}
+html:has(body.leitor-ecra),body.cmp.visual-reader.visual-v2.leitor-ecra{overflow:hidden!important}
+/* A caixa da câmara fica com a altura do vídeo, para a moldura do QR coincidir com a zona lida; o fundo preto é à parte. */
+.leitor-ecra-fundo{display:none}
+body.leitor-ecra .leitor-ecra-fundo{display:block;position:fixed;inset:0;z-index:5999;background:#000}
+body.cmp.visual-reader.visual-v2.leitor-ecra #camera{position:fixed!important;top:var(--leitor-topo,118px)!important;left:0!important;right:0!important;bottom:auto!important;height:auto!important;max-height:calc(100dvh - var(--leitor-topo,118px) - var(--h-credit,40px));z-index:6000;display:block!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:#000!important;overflow:hidden!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #camera :is(.camera-idle,.visual-camera-guide){display:none!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #camera video{display:block!important;max-width:none!important;max-height:none!important;border-radius:0!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-topo{position:fixed;z-index:6003;top:0;left:0;right:0;display:grid;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 12px;background:#05080f;color:#fff;box-shadow:0 1px 0 #ffffff1f}
+.leitor-ecra-linha{display:flex;align-items:center;gap:8px}
+.leitor-ecra-titulo{flex:1;min-width:0;display:grid;gap:2px}
+.leitor-ecra-titulo strong{color:#fff;font:800 17px/1.2 var(--f-body,system-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.leitor-ecra-titulo span{color:#c9d3e2;font:600 13px/1.3 var(--f-body,system-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-topo button,body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-manual button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;margin:0;padding:0 14px!important;border:1.5px solid #ffffff8c!important;border-radius:999px!important;background:#ffffff14!important;color:#fff!important;font:700 14px var(--f-body,system-ui)!important;box-shadow:none!important;cursor:pointer;white-space:nowrap}
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-topo button svg,body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-manual button svg{color:#fff!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra :is(.leitor-ecra-topo,.leitor-ecra-manual) button:focus-visible{outline:3px solid #ffd76a;outline-offset:2px}
+.leitor-ecra-modos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-modos button{min-height:40px;padding:0 6px!important;font-size:13px!important;white-space:normal;line-height:1.15;text-align:center}
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-modos button:disabled{opacity:.45;cursor:default}
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-modos button[data-modo="normal"][aria-pressed="true"]{background:#1d8a5f!important;border-color:#6be3b1!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-modos button[data-modo="desistencia"][aria-pressed="true"]{background:#a66d00!important;border-color:#ffd36b!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-modos button[data-modo="desclassificacao"][aria-pressed="true"]{background:#b3261e!important;border-color:#ff9a90!important}
+/* Em desistência ou desclassificação, a imagem ganha uma moldura de aviso. */
+body.cmp.visual-reader.visual-v2.leitor-ecra[data-leitor-modo="desistencia"] #camera{box-shadow:inset 0 0 0 5px #ffd36b!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra[data-leitor-modo="desclassificacao"] #camera{box-shadow:inset 0 0 0 5px #ff6b5e!important}
+
+/* Resultado da leitura: cartão no fundo, sempre à vista */
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback{position:fixed!important;z-index:6001;left:10px;right:10px;bottom:calc(var(--h-credit,40px) + env(safe-area-inset-bottom,0px) + 10px);margin:0!important;max-height:30dvh;overflow:auto;padding:14px 16px!important;border:1px solid #ffffff2e!important;border-left:6px solid #ffffff73!important;border-radius:16px!important;background:#0b1424e6!important;color:#fff!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 10px 30px #0009!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback #feedback-title{margin:0 0 4px!important;color:#fff!important;font-size:21px!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback #feedback-detail{margin:0!important;color:#dbe3ef!important;font-size:15px!important;line-height:1.4}
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback.success{border-left-color:#3ddc97!important;background:#06281ce6!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback.success #feedback-title{color:#7cf2c0!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback:is(.warning,.pending){border-left-color:#ffcf5a!important;background:#2c2207e6!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback:is(.warning,.pending) #feedback-title{color:#ffe08a!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback.error{border-left-color:#ff6b5e!important;background:#300e0be6!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #feedback.error #feedback-title{color:#ffaaa1!important}
+/* Aviso de leitura e sinal verde por cima da câmara */
+body.cmp.visual-reader.visual-v2.leitor-ecra .scan-toast{z-index:6005!important;top:calc(var(--leitor-topo,118px) + 10px)!important}
+body.leitor-ecra.scan-success::after{z-index:6004!important}
+
+/* Escrever o dorsal quando o QR não se lê */
+body.cmp.visual-reader.visual-v2.leitor-ecra .leitor-ecra-manual:not([hidden]){position:fixed;z-index:6002;left:10px;right:10px;bottom:calc(var(--h-credit,40px) + env(safe-area-inset-bottom,0px) + 10px);display:flex;gap:8px;padding:12px;border:1px solid #ffffff2e;border-radius:16px;background:#0b1424f2;box-shadow:0 10px 30px #0009}
+body.cmp.visual-reader.visual-v2.leitor-ecra #leitor-ecra-manual input{flex:1;min-width:0;min-height:48px;padding:0 14px!important;border:1.5px solid #ffffff73!important;border-radius:12px!important;background:#ffffff12!important;color:#fff!important;font:700 20px var(--f-body,system-ui)!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra #leitor-ecra-manual input::placeholder{color:#b8c4d6}
+body.cmp.visual-reader.visual-v2.leitor-ecra #leitor-ecra-manual button[type="submit"]{background:#1d8a5f!important;border-color:#6be3b1!important}
+body.cmp.visual-reader.visual-v2.leitor-ecra:has(.leitor-ecra-manual:not([hidden])) #feedback{display:none!important}
+</style>
+<script id="cm-leitor-ecra-js">
+/* Telemóvel: com a câmara ligada e a prova aberta, o leitor de dorsais ocupa o ecrã inteiro. Só apresentação. */
+(()=>{
+ const el=id=>document.getElementById(id);
+ const telemovel=matchMedia('(max-width: 900px), (pointer: coarse)');
+ let topo=null,nomeProva=null,subtitulo=null,modos=null,manual=null,campoManual=null,botaoParar=null;
+ let emEcra=false,reabrindo=false,ultimaReabertura=0,pedimosEcraNavegador=false;
+ const aLer=()=>{try{return !!scanner?.isScanning;}catch{return false;}};
+ const ocupada=()=>{try{return !!cameraBusy;}catch{return false;}};
+ const comAcesso=()=>{try{return !!selectedId&&acessoValidoLeitor(selectedId);}catch{return false;}};
+ const passwordAberta=()=>el('reader-password-modal')?!el('reader-password-modal').hidden:false;
+ const modoAtual=()=>document.querySelector('[name=modo-dorsal]:checked')?.value||'normal';
+ function podeEcra(){return telemovel.matches&&comAcesso()&&!passwordAberta();}
+ // Ícones próprios: com um SVG lá dentro, a camada visual da página não troca o ícone.
+ const ICONES={parar:'<rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/>',teclado:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',nenhum:''};
+ function botao(texto,classe,rotulo,icone='nenhum'){
+  const b=document.createElement('button');b.type='button';if(classe)b.className=classe;if(rotulo)b.setAttribute('aria-label',rotulo);
+  b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"'+(icone==='nenhum'?' style="display:none"':'')+'>'+ICONES[icone]+'</svg>';
+  b.append(document.createTextNode(texto));return b;
+ }
+ function criar(){
+  if(topo||!el('camera'))return;
+  topo=document.createElement('div');topo.className='leitor-ecra-topo';topo.setAttribute('role','toolbar');topo.setAttribute('aria-label','Leitor de dorsais em ecrã inteiro');
+  const linha=document.createElement('div');linha.className='leitor-ecra-linha';
+  const titulo=document.createElement('div');titulo.className='leitor-ecra-titulo';
+  nomeProva=document.createElement('strong');subtitulo=document.createElement('span');titulo.append(nomeProva,subtitulo);
+  const escrever=botao('Escrever','leitor-ecra-escrever','Escrever o número do dorsal','teclado');
+  botaoParar=botao('Parar','leitor-ecra-parar','Parar a câmara','parar');
+  escrever.addEventListener('click',()=>abrirManual(manual.hidden));
+  botaoParar.addEventListener('click',()=>window.stopCamera?.());
+  linha.append(titulo,escrever,botaoParar);
+  modos=document.createElement('div');modos.className='leitor-ecra-modos';modos.setAttribute('role','group');modos.setAttribute('aria-label','Próxima leitura');
+  for(const [valor,texto] of [['normal','Dorsal'],['desistencia','Desistência'],['desclassificacao','Desclassificação']]){
+   const b=botao(texto);b.dataset.modo=valor;
+   b.addEventListener('click',()=>{const r=document.querySelector('[name=modo-dorsal][value="'+valor+'"]');if(!r||r.disabled||el('read-mode')?.disabled||r.checked)return;r.checked=true;r.dispatchEvent(new Event('change',{bubbles:true}));atualizar();});
+   modos.append(b);
+  }
+  topo.append(linha,modos);
+  manual=document.createElement('form');manual.className='leitor-ecra-manual';manual.id='leitor-ecra-manual';manual.hidden=true;
+  campoManual=document.createElement('input');campoManual.inputMode='numeric';campoManual.autocomplete='off';campoManual.placeholder='N.º do dorsal';campoManual.setAttribute('aria-label','Número do dorsal');
+  const registar=botao('Registar');registar.type='submit';
+  manual.append(campoManual,registar);
+  manual.addEventListener('submit',evento=>{
+   evento.preventDefault();const valor=campoManual.value.trim();if(!valor)return;
+   const original=el('manual'),bib=el('bib');if(!original||!bib)return;
+   bib.value=valor;if(original.requestSubmit)original.requestSubmit();else original.dispatchEvent(new Event('submit',{cancelable:true}));
+   campoManual.value='';abrirManual(false);
+  });
+  const fundo=document.createElement('div');fundo.className='leitor-ecra-fundo';fundo.setAttribute('aria-hidden','true');
+  document.body.append(fundo,topo,manual);
+ }
+ function abrirManual(abrir){if(!manual)return;manual.hidden=!abrir;if(abrir)campoManual.focus();else if(emEcra)botaoParar?.focus({preventScroll:true});}
+ function atualizar(){
+  if(!topo)return;
+  nomeProva.textContent=el('proof')?.selectedOptions?.[0]?.textContent?.trim()||'Leitor de dorsais';
+  subtitulo.textContent=el('race-count')?.textContent?.trim()||'';
+  const modo=modoAtual(),bloqueado=!!el('read-mode')?.disabled;
+  for(const b of modos.querySelectorAll('button')){b.setAttribute('aria-pressed',String(b.dataset.modo===modo));b.disabled=bloqueado;}
+  document.body.dataset.leitorModo=modo;
+  if(emEcra)document.body.style.setProperty('--leitor-topo',topo.offsetHeight+'px');
+ }
+ function sairEcraNavegador(){if(pedimosEcraNavegador&&document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});pedimosEcraNavegador=false;}
+ function definirEcra(ligar){
+  if(ligar===emEcra)return;
+  emEcra=ligar;document.body.classList.toggle('leitor-ecra',ligar);
+  if(ligar){
+   atualizar();
+   try{if(!window.history.state?.leitorEcra)window.history.pushState({...(window.history.state||{}),leitorEcra:true},'');}catch{}
+   botaoParar?.focus({preventScroll:true});
+  }else{
+   abrirManual(false);sairEcraNavegador();delete document.body.dataset.leitorModo;
+   try{if(window.history.state?.leitorEcra)window.history.back();}catch{}
+  }
+ }
+ function videoDesajustado(){
+  const camera=el('camera'),video=camera?.querySelector('video');if(!video)return false;
+  const largura=parseFloat(video.style.width)||video.getBoundingClientRect().width;
+  return Math.abs(largura-camera.clientWidth)>8;
+ }
+ async function reabrir(){
+  // A biblioteca mede a câmara quando a liga: depois de mudar de tamanho, volta a abri-la.
+  if(reabrindo||ocupada()||Date.now()-ultimaReabertura<2500)return;
+  reabrindo=true;ultimaReabertura=Date.now();
+  try{
+   await window.stopCamera?.();
+   // A biblioteca precisa de um momento para libertar a câmara antes de a voltar a ligar.
+   await new Promise(r=>setTimeout(r,350));
+   for(let i=0;i<20&&ocupada();i++)await new Promise(r=>setTimeout(r,100));
+   await window.startCamera?.();
+  }catch{}finally{reabrindo=false;aplicar();}
+ }
+ function aplicar(){
+  if(!topo)return;
+  if(!reabrindo&&!(ocupada()&&emEcra))definirEcra(podeEcra()&&aLer());
+  if(emEcra)atualizar();
+  if(aLer()&&!ocupada()&&!reabrindo&&videoDesajustado())reabrir();
+ }
+ let iniciado=false;
+ function iniciar(){
+  // O leitor volta a emitir DOMContentLoaded: só arranca uma vez.
+  if(iniciado)return;criar();if(!topo)return;iniciado=true;
+  // Ao tocar em «Iniciar câmara», o ecrã inteiro entra antes de a câmara ser medida.
+  el('start')?.addEventListener('click',()=>{
+   if(!podeEcra()||aLer()||ocupada())return;
+   definirEcra(true);
+   if(!document.fullscreenElement&&document.documentElement.requestFullscreen){pedimosEcraNavegador=true;document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{pedimosEcraNavegador=false;});}
+  },{capture:true});
+  window.addEventListener('popstate',()=>{if(emEcra&&aLer())window.stopCamera?.();});
+  const observar=new MutationObserver(aplicar);
+  observar.observe(el('camera'),{childList:true});
+  for(const id of ['stop','start','reader-password-modal','read-mode','feedback'])if(el(id))observar.observe(el(id),{attributes:true,attributeFilter:['disabled','hidden','class']});
+  for(const id of ['race-count','proof'])if(el(id))observar.observe(el(id),{childList:true,characterData:true,subtree:true});
+  document.addEventListener('change',aplicar);telemovel.addEventListener?.('change',aplicar);window.addEventListener('resize',aplicar);
+  setInterval(aplicar,1000);aplicar();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();
+})();
+</script>
+</body></html>
